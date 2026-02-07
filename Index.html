@@ -33,7 +33,7 @@
     //CATEGORY EXTRAPOLATION CONFLICT EXPERIMENT IN-PERSON
 
     //General experiment info to update
-    console.log("Updated last: 2/7-v2")
+    console.log("Updated last: 2/7-v3")
 
     var expServer = 1 // 0 = testing mode; 1 = on server 
         console.log("serverMode", expServer)
@@ -570,7 +570,7 @@ console.log(promptedColorB1[8])
 
 /* ---------------------------------- TASK 2: ASSOCIATION RATINGS ---------------------------------------- */
 
-/*
+
 
 //Create array of squares for block instructions screen
     var stimulusColor = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
@@ -867,7 +867,8 @@ var cat_instructions = {
           <p>Please keep these responses in mind when you complete each trial.
             ${colorRowsHTML2}
            </div>`,
-          prompt: `<p>Do you have any questions?
+          prompt: `This part of the experiment will take about 10 minutes.
+          <p>Do you have any questions?
           <br>I will now leave the room and close the door. The door does not lock. Please open it when you have finished this task. 
           <br>When you are ready, press the spacebar to begin.</p>`,
         post_trial_gap: 500,
@@ -986,12 +987,12 @@ for (let side of blueSide) {
     timeline: [fixation2, category_trial],
     timeline_variables: category_stimuli,
     randomize_order: true,
-    repetitions: 2
+    repetitions: 1
   };
 
  //Block for alien trials
   var category_block_rep = {
-    timeline: [category_block, block_break_category1 ]//, category_block, block_break_category2, category_block, block_break_category3,category_block] // accuracy_block1, alien_block, accuracy_block2],// flower_block, flower_block],
+    timeline: [category_block, block_break_category1, category_block, block_break_category2, category_block, block_break_category3,category_block] // accuracy_block1, alien_block, accuracy_block2],// flower_block, flower_block],
   };
   timeline.push(category_block_rep)
 
