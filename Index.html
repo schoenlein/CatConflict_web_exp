@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Experiment</title>
+
+    <script src="jspsych/jspsych.js"></script>
+    <script src="jspsych/plugin-preload.js"></script>
+    <script src="jspsych/plugin-html-keyboard-response.js"></script>
+    <script src="jspsych/plugin-html-keyboard-responseMAS.js"></script>
+    <script src="jspsych/plugin-survey-html-form.js"></script>
+    <script src="jspsych/plugin-image-keyboard-response_MAS.js"></script>
+    <script src="jspsych/plugin-image-keyboard-response_MAS_2images.js"></script>
+    <script src="jspsych/plugin-image-keyboard-response.js"></script>
+    <script src="jspsych/plugin-html-slider-response.js"></script>
+    <script src="jspsych/plugin-html-button-response.js"></script>
+    <script src="jspsych/plugin-survey-text.js"></script>
+    <script src="jspsych/plugin-fullscreen.js"></script>
+    <script src="jspsych/plugin-survey-multi-choice.js"></script>
+    <script src="jspsych/plugin-survey-multi-select.js"></script>
+    <script src="https://unpkg.com/@jspsych-contrib/plugin-pipe"></script>
+    <script src="colorCalibration_CatConflict_Booth7.js"></script>
+    <script src = "ishiharaPlates.js"></script>
+    <link href="jspsych/jspsych.css" rel="stylesheet" type="text/css" />
+
+  </head>
+  <body></body>
+
+<!--------------------- Here is where the experiment is created ------------------------------------------->
+  <script>
+
+// ---------- UPDATE THESE AS NEEDED------------------//
+
+    //CATEGORY EXTRAPOLATION CONFLICT EXPERIMENT IN-PERSON
+
+    //General experiment info to update
+    console.log("Updated last: 2/6")
+
+    var expServer = 1 // 0 = testing mode; 1 = on server 
+        console.log("serverMode", expServer)
+
+    var expType = 0 // 0 = SONA in-lab version; 1 = sona ONLINE ; 2 = CloudResearch online version (relevant for consent & debriefing)
+        console.log("consent:", expType)
+
+  
+    var expTime = 30; // How long experiment will take in minutes
+    var experimenterName = "mschoenl@highpoint.edu"  //Update to your contact info. this is presented if an error arises for a participantd
+    var numConditions = 2; //Number of conditions. 
+    var numTasks = 3;  //Number of experimental tasks (add 1 to include Color vision test)
+
+    //CloudResearch completion code 
+    var completion_code = "jr2z7aXwvSTz5";  //Code copied from mTurk Cloud Research Fixed completion code
+
+
+     //Debriefing script- presents at very end of experiment. Describes the purpose of the experiment. Statements automatically included about receiving sona credit or entering a code for mTurk HITT. 
+    // NOTE: if you have more than one between subjects condition, you MUST describe what the different conditions did/saw. 
+    var debriefScript = "<p>Great job! You have finished the experiment.</p>"
+
+
+    // Set background color  
+    document.body.style.backgroundColor = "rgb(122, 121, 120)"             
+
+   
+
+
+/*----------------------------------START OF EXPERIMENT TIMELINE: DO NOT CHANGE ------------------------------------ */
+
+  // Pop-up box if people try to leave the page (including refreshing) 
+    window.onbeforeunload = function() {
+        return "If you leave or refresh the page, you will not be able to finish the experiment.";
+    };
+
+    //initialize and prompt global variables to record
+    var jsPsych = initJsPsych({
+      on_trial_finish: function(data) {
+          if (data) {
+            data.subjectID = subject_id;
+            data.condition = whichCondition;
+            data.workerID = workerID;
+            data.startTime = start_time;
+          }
+      },
+      on_finish: function() {
+        if (expServer == 0){
+          jsPsych.data.displayData();
+          jsPsych.data.get().localSave('csv',subject_id+".csv", {flatten:true}) // saves to local device if not on server. 
+        }
+      }
+    });
+
+
+    //give subjects a random ID
+    const subject_id = jsPsych.randomization.randomID(10);
+    const filename = `${subject_id}.csv`;
+    var urlvar = jsPsych.data.urlVariables();
+    var workerID = urlvar.id // urlvar.id  
+
+
+    // Set condition
+    function getRandomIntInclusive(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return  Math.floor(Math.random() * (max - min + 1));
+        }
+    assigned_condition = getRandomIntInclusive(0,numConditions-1);
+    var whichCondition = assigned_condition; 
+    console.log("whichCondition: ", whichCondition)
+
+             
+
+    // Get Start time
+    var start_time = new Date();
+
+
+    //Initialize colors
+    var calibrationColors = colorCalibration_CatConflict_Booth7()
+    var promptedColorR1 = calibrationColors["Red"]
+    var promptedColorG1 = calibrationColors["Green"]
+    var promptedColorB1 = calibrationColors["Blue"]
+
+    console.log("backgroundrgb:", rBackground, gBackground, bBackground)
+
+
+    //start timeline
+    var timeline = [];
+
+
+/*----------------------------------Load Standard functions & variables ------------------------------------ */
+
+    //Fixation trial
+    var fixation = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: '<div style="font-size:60px;">+</div>',
+        choices: "NO_KEYS",
+        trial_duration: 500, 
+        data: {
+            task: 'fixation'
+        }
+    };
+
+
+    // Utility function to shuffle an array (Fisher-Yates)
+  function shuffle(array) {
+    let arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+//pre-load images
+  const shapes = ["curvy", "pointy"];
+    const nums = [...Array(25).keys()];
+
+    const preload_images = shapes.flatMap(shape =>
+      nums.map(n => `img/Booth7/${shape}-${n}.png`)
+    );
+
+
+  var preload = {
+    type: jsPsychPreload,
+   show_progress_bar: true,
+  message: 'Loading',
+  images: preload_images,
+  on_finish: function() {
+    console.log("All alien images preloaded");
+  }
+};
+
+    timeline.push(preload)
+
+
+
+
+// ------------------------------------ START OF EXPERIMENT TRIALS ------------------------------------//
+   
+
+if (expType == 0){ 
+
+//Booth trial
+var booth_trial = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: '<p>Experimenter:'+
+          '<p>First, please add the subjectID number to the end of the experiment URL & re-load by pressing "enter".'+
+          "<p>Second, which Booth is this: type the Number and then continue.",
+      choices: ["6", "7"]
+      }
+    timeline.push(booth_trial) 
+
+
+ // Initial welcome screen
+    var initial_screen = {
+      type: jsPsychHtmlButtonResponse,
+      stimulus: '<p>Experimenter:'+
+          '<p> please double check that the subjectID is at the end of the experiment URL.'+
+          '<br>Then click begin'+
+          '<p> Once you click that button, it will not be possible to restart the experiment.',
+      choices: ['Begin Experiment']
+    }
+    timeline.push(initial_screen);
+ 
+} else if (expType > 0){
+
+    // Initial welcome screen
+    var initial_screen = {
+        type: jsPsychHtmlButtonResponse,
+        stimulus: '<p>Welcome to our experiment!</p>' +
+            '<br>Please make sure you are using a computer to complete this experiment (i.e. NOT a phone or tablet).'+
+            "<br>Please ensure your monitor's brightness and volume is turned all the way up."+
+            '<br>For best viewing, please sit approximately 1.5 feet to 2 feet from your computer screen.</p>'+
+            '<br>At the bottom of this screen, you will see a button that says "Begin Experiment".'+
+            '<br>Please only click that button when you are ready to complete the '+expTime+' minute experiment in one sitting.</p>'+
+            '<p> Once you click that button, it will not be possible to restart the experiment.',
+        choices: ['Begin Experiment'] 
+            }
+    timeline.push(initial_screen);
+}
+
+var whichBooth = "";
+
+
+
+
+//Give each subject a random ID
+if (expType == 0){
+  var subjIDenter = {
+      type: jsPsychSurveyText,
+      questions: [
+          {prompt: "subjectID", name: 'subjNumber', rows: "1", columns: "15", required: true,},
+          {prompt: "Experimenter", name: 'experimenter', rows: "1", columns: "15", required: true,},
+          {prompt: "Confirm Booth Number", name: 'booth', rows: "1", columns: "15", required: true,}
+          ],
+      preamble: "Experimenter: please complete.",
+      button_label: "Begin",
+      randomize_question_order: false,
+      autocomplete: false
+      }
+  timeline.push(subjIDenter);
+
+ }
+
+
+/*-------------------- BEGINNING OF DEMOGRAPHIC INFO ----------------------------------------*/ 
+
+
+
+  //Enter fullscreen
+    var enter_fullscreen = {
+      type: jsPsychFullscreen,
+      fullscreen_mode: true
+  }
+  timeline.push(enter_fullscreen)
+   
+
+// Overview instructions of experiment 
+    var overview_instructions = {
+        type: jsPsychHtmlButtonResponse,
+        stimulus: 'Welcome! <p> This experiment involves several parts: demographic information, followed by '+numTasks+' tasks.' + 
+            '<p> It will take about '+expTime+' minutes to complete all parts.',
+        choices: ['Begin']
+    }
+    timeline.push(overview_instructions);
+
+    
+
+// Demographic questions
+    // Age, gender, race/ethnicity, and language  
+    var age_lang_demo = {
+        type: jsPsychSurveyText,
+        questions: [
+            {prompt: "Age", name: 'Age', rows: "1", columns: "3", required: true,},
+            {prompt: "Gender", name: 'Gender', rows: "1", columns: "15", required: true,},
+            {prompt: "Race/ethnicity", name: 'Race/ethnicity', rows: "1", columns: "30", required: true,},
+            {prompt: "List all languages you know", name: "Languages", rows: "1", columns: "40", required: true,}
+            ],
+        preamble: "Please answer the following questions. Click 'Done' to continue. ",
+        button_label: "Done",
+        randomize_question_order: false
+        }
+    timeline.push(age_lang_demo);
+
+
+
+
+
+/*----------------------------------Part 1: Flower Categorization------------------------------------ */
+
+
+// Categorization Instructions 
+var cat_instructions = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: `<br><strong>TASK 1 of `+numTasks+`</strong></br>
+        <p>During this task you will be presented with images of aliens from the planet Sparl. 
+        <br>The aliens come from two different species, either the FILK species or the SLUB species.
+        <p>FILKS and SLUBS have slightly different visual features.Your task is to learn how to identify these two species based on their visual features.
+        <br>On each trial, the two species' names will appear at the top of the screen, FILK on the left and SLUB on the right, with one alien centered below.
+        <p></p>
+        <p>If you think the alien is a FILK, press the left arrow key.
+        <br>If you think the alien is a SLUB, press the right arrow key.
+        <p></p>       
+        <p>After you respond, you will be told the correct answer and the alien will move below its species name.
+        <br>There will then be a brief pause and the next trial will begin.
+        <p>At first, you may feel like you are guessing, but as you see more aliens, you may begin to feel more confident in your responses.
+        <p>There will be 2 blocks of trials for this task. At the end of each block, you will get to see your accuracy from that block.
+        <br>This part of the experiment will take about 5 minutes.
+        <p>Do you have any questions?
+        <br>I will now leave the room and close the door. The door does not lock. Please open it when you have finished this task. 
+        <br>When you are ready, press the spacebar to begin.`,
+        post_trial_gap: 500, 
+        choices: [" "],
+         data: {
+            task: 'Cat_instructions',
+        }
+    }; 
+    timeline.push(cat_instructions);
+
+
+// Setting up parameters for categorization //
+    var breakCounter = 0; // Counts number of trials for a block
+    var blockCounter = 0; // Counts which block
+    var numSpecies = 2; 
+    var numAliensPerSpecies = 25;
+    var numAliensTotal = 50;
+    let alienCounter = new Array(numSpecies).fill().map(() => Array(numAliensPerSpecies).fill(0))
+    var labels = ["FILK", "SLUB"]
+
+
+
+//Define stimuli based on condition 
+    if (whichCondition == 0){
+      var SlubColor = "lightBlue"
+      var SlubColorNum = 1
+      var FilkColor = "darkBlue"
+      var FilkColorNum = 8
+
+    }else if (whichCondition == 1){
+      var SlubColor = "darkPurple"
+      var SlubColorNum = 15
+      var FilkColor = "darkBlue"
+      var FilkColorNum = 8
+
+    }
+
+  
+//Create procedure
+const species = ["FILK", "SLUB"];
+const alienColors = [FilkColor, SlubColor]
+const numbers = [...Array(25).keys()]; // 0–24
+
+let alien_stimuli = [];
+
+for (let specie of species) {
+  for (let num of numbers) {
+
+    let correctResponse =
+    specie === "FILK" ? "ArrowLeft" : "ArrowRight";
+
+    let targetName =
+    specie === "FILK" ? "FILK" : "SLUB";
+
+    let bodyShape =
+    specie === "FILK" ? "Pointy" : "Curvy";
+
+    let bodyColorNum =
+    specie === "FILK" ? FilkColorNum : SlubColorNum;
+
+    let alienR =
+    specie === "FILK" ? promptedColorR1[FilkColorNum] : promptedColorR1[SlubColorNum];
+   let alienG =
+    specie === "FILK" ? promptedColorG1[FilkColorNum] : promptedColorG1[SlubColorNum];
+   let alienB =
+    specie === "FILK" ? promptedColorB1[FilkColorNum] : promptedColorB1[SlubColorNum];
+
+  let alienRGB = [alienR,alienG,alienB]
+
+    alien_stimuli.push({
+      //stimulus: ` <img style="display: flex; width:83px; height:240px; position: relative;  top: 66px; img/Booth7/${bodyShape}-${num}.png></div>`,
+      stimulus: ` img/Booth7/${bodyShape}-${num}.png`,
+      correctResponse: correctResponse,
+      targetName: targetName, //species[specie],
+      alienNumber: num,
+      bodyColorNum: bodyColorNum,
+      alienRGB: alienRGB,
+      alienR: alienR,
+      alienG: alienG,
+      alienB: alienB,
+      coloredSquare: `<div style="display: flex; width:83px; height:240px; position: relative; left: 247px; top: 66px; z-index: -1; background-color:rgb(`+alienR+`,`+alienG+`,`+alienB+`);" ></div>`,//`+alienR+`,`+alienG+`,`+alienB+`);"></div>`,
+      prompt: `<div style="position: relative; top: -200px; left: 0; text-align: center;">
+            <p style="font-size: 25px;">Is this a FILK or a SLUB alien?<p>Press the left or right arrow key</p>
+            <div style="display: flex; gap: 450px; margin-top: 60px;">
+            <p style="font-size: 30px;">FILK</p>
+            <p style="font-size: 30px;">SLUB</p></div>
+            <p style="font-size: 25px;position: relative; top: -50px; color:rgb(`+rBackground+`,`+gBackground+`,`+bBackground+`);">--<br>-------</p>
+            <div style="display: flex; width:100px; height:260px; position: relative; left: 245px; top:-70px; z-index: -1; background-color:rgb(`+alienR+`,`+alienG+`,`+alienB+`);" ></div>`//`+alienR+`,`+alienG+`,`+alienB+`);"></div>`
+      });
+  }
+}
+
+
+console.log(promptedColorB1[8])
+
+    //Alien presentation trial
+    var showAlien = {
+        type: jsPsychImageKeyboardResponseMAS,
+        stimulus: jsPsych.timelineVariable('stimulus'),
+        stimulus_height: 300, 
+        stimulus_top: 375,
+        maintain_aspect_ratio: true,
+        render_on_canvas: false,  
+        choices: ['ArrowLeft', 'ArrowRight'],
+        prompt: jsPsych.timelineVariable('prompt'),
+        feedbackTrial: 0,
+        rgbBackground: [rBackground, gBackground, bBackground],
+        on_finish: function(data){
+            data.correct = jsPsych.pluginAPI.compareKeys(data.response, data.correctResponse);
+       },
+        data: {
+            task: 'alien sorting',           
+            bodyNumber: jsPsych.timelineVariable('alienNumber'),
+            alienColor: jsPsych.timelineVariable('alienRGB'),
+            correctResponse: jsPsych.timelineVariable('correctResponse'),
+            targetName: jsPsych.timelineVariable('targetName')  ,
+            alienR: jsPsych.timelineVariable('alienR'),
+            alienG: jsPsych.timelineVariable('alienG'),
+            alienB: jsPsych.timelineVariable('alienB')
+
+        }
+      }
+
+           
+      //Alien feedback trial
+      var feedbackAlien = {
+          type: jsPsychImageKeyboardResponseMAS,
+          stimulus: jsPsych.timelineVariable('stimulus'),
+          stimulus_height: 300,
+          stimulus_top:375,
+          maintain_aspect_ratio: true,
+          choices: "NO_KEYS",
+          trial_duration: 500,  
+           render_on_canvas: false,     
+          on_start: function(trial) {
+            const last_trial = jsPsych.data.get().last(1).values()[0];
+            const correct = last_trial.correct;
+            const targetName = last_trial.targetName; //
+            const alienR = last_trial.alienR; 
+            const alienG = last_trial.alienG; 
+            const alienB = last_trial.alienB; 
+            let feedbackText = correct
+              ? `YES<br>This is a <strong>${targetName}</strong>`
+              : `NO<br>This is a <strong>${targetName}</strong>`;
+            trial.prompt = 
+              `<div style="position: relative; top: -200px; left: 0; text-align: center;">
+              <p style="font-size: 25px;">Is this a FILK or a SLUB alien?<p>Press the left or right arrow key</p>
+              <div style="display: flex; gap: 450px; margin-top: 60px;">
+              <p style="font-size: 30px;">FILK</p>
+              <p style="font-size: 30px;">SLUB</p></div>
+              <p style="font-size: 25px;position: relative; top: -50px;">${feedbackText}</p>
+              <div style="display: flex; width:100px; height:260px; position: relative; left: 245px; top: -70px; z-index: -1; background-color:rgb(${alienR},${alienG},${alienB});" ></div>`
+              },
+          data: {
+            task: 'alien feedback text'
+          },
+        };
+
+        
+
+     //Alien feedback movement trial
+      var feedbackMoveAlien = {
+          type: jsPsychImageKeyboardResponseMAS,
+          stimulus: jsPsych.timelineVariable('stimulus'),
+          stimulus_height: 300,
+          stimulus_top:325,
+          maintain_aspect_ratio: true,
+          choices: "NO_KEYS",
+          trial_duration: 500,  
+          render_on_canvas: false,     
+          on_start: function(trial) {
+            const last_trial = jsPsych.data.get().last(2).values()[0];
+            const correct = last_trial.correct;
+            const targetName = last_trial.targetName;
+            const alienR = last_trial.alienR; 
+            const alienG = last_trial.alienG; 
+            const alienB = last_trial.alienB; 
+            let feedbackText = correct
+              ? `YES<br>This is a <strong>${targetName}</strong>`
+              : `NO<br>This is a <strong>${targetName}</strong>`;
+
+            if (targetName == "FILK"){
+                trial.stimulus_left = -260;
+                squareLeft = -12;
+
+            }else if (targetName == "SLUB"){
+                trial.stimulus_left = 260;
+                squareLeft = 510; 
+            }
+            trial.prompt = `
+              <div style="position: relative; top: -200px; left: 0; text-align: center;">
+              <p style="font-size: 25px;">Is this a FILK or a SLUB alien?<p>Press the left or right arrow key</p>
+              <div style="display: flex; gap: 450px; margin-top: 60px;">
+              <p style="font-size: 30px;">FILK</p>
+              <p style="font-size: 30px;">SLUB</p></div>
+              <p style="font-size: 25px;position: relative; top: -50px;">${feedbackText}</p>
+              <div style="display: flex; width:100px; height:260px; position: relative; left: 245px; top: -70px; z-index: -1; background-color:rgb(${rBackground},${gBackground},${bBackground});" ></div>
+              <div style="display: flex; width:100px; height:260px; position: relative; left:${squareLeft}px; top: -389px; z-index: -1; background-color:rgb(${alienR},${alienG},${alienB});" ></div>`
+          },
+          data: {
+            task: 'alien feedback movement'
+          },
+        };
+        
+
+   var accuracy_block1 = {
+        type:  jsPsychHtmlKeyboardResponse,
+        stimulus: function () {
+           var accuracyFlower = Math.round(jsPsych.data.get().last(24*3).filter({correct:true}).count()/(24)*100); //number of trials in a block*4(fixation + trial + 2feedback for each alien)
+        return "<p>You have completed block 1 for this task of the experiment.</p>" +
+        "<p> Your accuracy for this block was "+accuracyFlower+"%." +
+        "<br></br>" +
+        "<p> Please press the spacebar when you are ready to start the next block. </p>";
+        },
+        choices: " "
+    } 
+
+       var accuracy_block2 = {
+        type:  jsPsychHtmlKeyboardResponse,
+        stimulus: function () {
+           var accuracyFlower = Math.round(jsPsych.data.get().last(24*3).filter({correct:true}).count()/(24)*100); //number of trials in a block*4(fixation + trial + 2feedback for each alien)
+        return "<p>You have completed block 2 for this task of the experiment.</p>" +
+        "<p> Your accuracy for this block was "+accuracyFlower+"%." +
+        "<br></br>" +
+        "<p> Please press the spacebar when you are ready to start the next block. </p>";
+        },
+        choices: " "
+    } 
+
+
+
+
+  //Block for alien trials
+  var alien_block = {
+    timeline: [fixation, showAlien, feedbackAlien, feedbackMoveAlien],
+    timeline_variables: alien_stimuli,
+    randomize_order: true,
+    repetitions: 1
+  };
+
+  //Block for alien trials
+  var alien_block_Rep = {
+    timeline: [alien_block, accuracy_block1],// flower_block, flower_block],
+  };
+  timeline.push(alien_block_Rep)
+
+
+
+
+    var passwordSurvey = {
+      type: jsPsychSurveyHtmlForm,
+      preamble: `<p>Great job!</p> You have completed part 1 of 3.
+                <p>Please let the experimenter know you have finished by opening the door or knocking on it. <br></br>
+                <br>Experimenter, please enter code to continue.`,
+      html: '<input name="secret_code" id="secret_code" type="password" autocomplete="off"required />',
+      autofocus: 'secret_code',
+      button_label: 'Continue',
+      required: true
+    };
+
+    timeline.push(passwordSurvey); 
+
+
+
+/* ---------------------------------- TASK 2: ASSOCIATION RATINGS ---------------------------------------- */
+
+
+
+//Create array of squares for block instructions screen
+    var stimulusColor = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    var alienColorText = ["FILK", "SLUB"]
+    var arrayCounter = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    var numTotalColors = 24; 
+    var numTotalTrials = 24*6*2
+    var numColorsPerCat = 24
+    var numColorCats = 2
+
+    //create looop of colors
+    for (i = 0; i < numTotalColors;){ //
+        var whichColor1 = getRandomIntInclusive(0,numColorsPerCat-1); 
+        if (arrayCounter[whichColor1] == 0){
+            stimulusColor[i] = [promptedColorR1[whichColor1], promptedColorG1[whichColor1], promptedColorB1[whichColor1]]
+            arrayCounter[whichColor1] = 1;
+            i++;
+        }        
+    }   
+
+
+  // split colors into rows
+  let row1 = stimulusColor.slice(0, 8);
+  let row2 = stimulusColor.slice(8, 16); // 11 + 13 = 24
+  let row3 = stimulusColor.slice(16, 24);
+
+  // function to turn an array of RGBs into a row of divs
+  function makeColorRow(row) {
+    return `<div style="display:flex; justify-content:center; margin:3px 0;">` +
+      row.map(rgb => {
+        let [r, g, b] = rgb;
+        return `<div style="
+          width:40px; height:40px;
+          background-color: rgb(${r},${g},${b});
+          margin: 8px;
+        "></div>`;
+      }).join("") +
+    `</div>`;
+  }
+
+  // combine rows
+  let colorRowsHTML = makeColorRow(row1) + makeColorRow(row2) + makeColorRow(row3);
+
+
+// Define instructions trial 
+var preload
+    var instrAssoc = {
+       type: jsPsychHtmlSliderResponse,    
+      stimulus: `<strong>TASK 2 of `+numTasks+`</strong>
+
+        <p>During this task you will be presented with each of the colored squares from the set below, one at a time
+        <br>You will be asked to rate how much you associate each color with the alien species:</p>
+        <p>FILK or SLUB</p>
+        <p>You will be asked to rate the association between each color and species on a scale from 'Not at all' to 'Very much' like the one below.
+        <br>To respond, slide the cursor along the response scale and then click the 'Continue' button to record your response and start the next trial.
+       <br>There will be two blocks of trials, one for each species. You will be asked to rate all of the colors for each species before going on to the next block.   
+        ${colorRowsHTML}
+          <div style="position: relative; width: 400px; height: 18px;top: 35px; margin: 10px auto;">
+          <div style="position:absolute; left:2px; width:5px; height:20px; top: 0px; background:black;"></div>
+          <div style="position:absolute; left:50%; transform: translateX(-50%); width:5px; height:20px; top:0px; background:black;"></div>
+          <div style="position:absolute; right:-2px; width:5px; height:20px; top: 0px;  background:black;"></div>
+          </div>`,
+        prompt: `<div style=" margin-left: 60px; margin-right: 60px;">     
+        <p>Before we begin, please look at all the colors above. Please use the mouse to:
+        <br>point to a color that you think is VERY MUCH associated to FILK aliens. And now a color that you think is NOT AT ALL associated to FILK aliens.
+         <br>The color you associate the least for each species would be rated on the far left of the scale, and the color you associate the most for each species would be rated on the far right of the scale. 
+        All other colors would be rated somewhere in-between.
+         <br>Now lets do the same for the SLUB aliens: a color VERY much associated, and one NOT AT ALL associated.
+        <p>Again, those colors will represent the far ends of the rating scale, such that they would be rated on the far left/right and all other colors would be rated somewhere in-between.
+        <br>This task will take about 10 minutes to complete
+        <p>Do you have any questions?
+        <br>I will now leave the room and close the door. The door does not lock. Please open it when you have finished this task. 
+        <br>When you are ready, click the 'Start' button to begin.</p>`,
+      post_trial_gap: 500, 
+      labels: [`<div style="font-size: 20px;">Not at<br>all</div>`, `<div style="font-size: 20px;">Very<br>much</div>`],
+      min: -200,
+      max: 200, 
+      slider_width: 400, 
+      slider_start: 0,
+      step: 1,
+      require_movement: false, 
+      response_ends_trial: true,
+      button_label: ["Start"],
+      data: {
+        task: "instructions"
+      }
+    };
+    timeline.push(instrAssoc);
+
+// Assign color category
+let speciesNames= [`FILK`, `SLUB`];
+let colorNumberIndex= [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
+let colorSeq;
+let colorSpecies;
+
+
+  //FILK set
+  let rating_stimuli_filk = [];
+  for(let colorNumber of colorNumberIndex){
+      colorSeq = "bodyColor";
+      colorSpecies = 0        
+       rating_stimuli_filk.push({stimulus: `<div style="position:relative; top: -100px; font-size: 30px;">
+          How much do you associate this color with
+          <p><strong>FILK</strong> aliens?</p></div>
+          <div style="width:100px;height:100px; position: relative; left: 250px; top: -50px; background-color:rgb(`+promptedColorR1[colorNumber]+`,`+promptedColorG1[colorNumber]+`,`+promptedColorB1[colorNumber]+`);"></div>
+          <div style="position: relative; width: 400px; height: 18px;top: 35px; margin: 10px auto;">
+          <div style="position:absolute; left:2px; width:5px; height:20px; top: 0px; background:black;"></div>
+          <div style="position:absolute; left:50%; transform: translateX(-50%); width:5px; height:20px; top:0px; background:black;"></div>
+          <div style="position:absolute; right:-2px; width:5px; height:20px; top: 0px;  background:black;"></div>
+          </div>`,
+            colorSeq: colorSeq,
+            colorNumber: colorNumber,
+            species: "Filk",
+            colorSpecies: colorSpecies
+      })
+    }
+
+  //SLUB set
+  let rating_stimuli_slub = [];
+  for(let colorNumber of colorNumberIndex){
+      colorSeq = "bodyColor";
+      colorSpecies = 1,      
+       rating_stimuli_slub.push({stimulus: `<div style="position:relative; top: -100px; font-size: 30px;">
+              How much do you associate this color with
+              <p><strong>SLUB</strong> aliens?</p></div>
+            <div style="width:100px;height:100px; position: relative; left: 250px; top: -50px; background-color:rgb(`+promptedColorR1[colorNumber]+`,`+promptedColorG1[colorNumber]+`,`+promptedColorB1[colorNumber]+`);"></div>
+           <div style="position: relative; width: 400px; height: 18px;top: 35px; margin: 10px auto;">
+          <div style="position:absolute; left:2px; width:5px; height:20px; top: 0px; background:black;"></div>
+          <div style="position:absolute; left:50%; transform: translateX(-50%); width:5px; height:20px; top:0px; background:black;"></div>
+          <div style="position:absolute; right:-2px; width:5px; height:20px; top: 0px;  background:black;"></div>
+          </div>`,
+            colorSeq: colorSeq,
+            colorNumber: colorNumber,
+            species: "Slub",
+            colorSpecies: colorSpecies
+      })
+    }
+
+
+  //Association rating trial
+    var squareRate =  {
+      type: jsPsychHtmlSliderResponse,    
+      stimulus: jsPsych.timelineVariable('stimulus'),
+      labels: [`<div style="font-size: 20px;">Not at<br>all</div>`, `<div style="font-size: 20px;">Very<br>much</div>`],
+      min: -200,
+      max: 200, 
+      slider_width: 400, 
+      slider_start: 0,
+      step: 1,
+      require_movement: true, 
+      response_ends_trial: true,
+      feedbackTrial: 0, 
+      data: {
+        task: "rating trial",
+        colorSeq: jsPsych.timelineVariable('colorSeq'),
+        colorNumber: jsPsych.timelineVariable('colorNumber'),
+        targetName: jsPsych.timelineVariable('species'),
+        colorSpecies: jsPsych.timelineVariable('colorSpecies')
+      }
+    }
+
+    //Block Break filk
+    var block_break_filk = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: `<div style="font-size: 25px;">In this block, you will be asked to rate your association between each of the colors and <p><strong>FILK</strong> aliens.
+          <p>Press the spacebar to continue.</div>`,
+        post_trial_gap: 500, 
+        response_ends_trial: true,
+        choices: " ",
+          data: {
+            task: 'block break'
+        }
+    };
+
+    //Block Break slub
+    var block_break_slub = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: `<div style="font-size: 25px;">In this block, you will be asked to rate your association between each of the colors and <p><strong>SLUB</strong> aliens.
+                  <p>Press the spacebar to continue.</div>`,
+        post_trial_gap: 500, 
+        response_ends_trial: true,
+        data: {
+            task: 'block break'
+        }
+    };
+
+  
+    //FIlk block
+    var filk_trials = {
+        timeline: [fixation, squareRate],
+        timeline_variables: rating_stimuli_filk,
+        repetitions: 2,
+        randomize_order: true
+    }
+    var filk_procedure = {
+        timeline: [block_break_filk, filk_trials],
+    }
+
+    //Slub block
+    var slub_trials = {
+        timeline: [fixation, squareRate],
+        timeline_variables: rating_stimuli_slub,
+        repetitions: 2,
+        randomize_order: true
+    }
+    var slub_procedure = {
+        timeline: [block_break_slub, slub_trials],
+    }
+
+   
+
+    //Rating procedure all 
+    var rating_procedure = {
+        timeline: jsPsych.randomization.shuffle([filk_procedure, slub_procedure]),
+    }
+    timeline.push(rating_procedure);
+
+
+
+      var passwordSurvey = {
+      type: jsPsychSurveyHtmlForm,
+      preamble: `<p>Great job!</p> You have completed part 2 of 3.
+                <p>Please let the experimenter know you have finished by opening the door or knocking on it. <br></br>
+                <br>Experimenter, please enter code to continue.`,
+      html: '<input name="secret_code" id="secret_code" type="password" autocomplete="off"required />',
+      autofocus: 'secret_code',
+      button_label: 'Continue',
+      required: true
+    };
+
+    timeline.push(passwordSurvey); 
+
+
+
+
+/* ---------------------------------- TASK 3: COLOR CATEGORIZATION ---------------------------------------- */
+
+
+//Create array of squares for block instructions screen
+    var stimulusColor = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    var arrayCounter = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    var numTotalColors = 24; 
+    var numTotalTrials = 24*6*2
+    var numColorsPerCat = 24
+    var numColorCats = 2
+
+    //create looop of colors
+    for (i = 0; i < numTotalColors;){ //
+        var whichColor1 = getRandomIntInclusive(0,numColorsPerCat-1); 
+        if (arrayCounter[whichColor1] == 0){
+            stimulusColor[i] = [promptedColorR1[whichColor1], promptedColorG1[whichColor1], promptedColorB1[whichColor1]]
+            arrayCounter[whichColor1] = 1;
+            i++;
+        }        
+    }   
+
+  // split colors into rows
+  let row12 = stimulusColor.slice(0, 8);
+  let row22= stimulusColor.slice(8, 16); // 11 + 13 = 24
+  let row32 = stimulusColor.slice(16, 24);
+
+  // function to turn an array of RGBs into a row of divs
+  function makeColorRow(row) {
+    return `<div style="display:flex; justify-content:center; margin:3px 0;">` +
+      row.map(rgb => {
+        let [r, g, b] = rgb;
+        return `<div style="
+          width:40px; height:40px;
+          background-color: rgb(${r},${g},${b});
+          margin: 8px;
+        "></div>`;
+      }).join("") +
+    `</div>`;
+  }
+
+  // combine rows
+  let colorRowsHTML2 = makeColorRow(row12) + makeColorRow(row22) + makeColorRow(row32);
+
+// Instructions //
+var cat_instructions = {
+    type: jsPsychHtmlKeyboardResponse,       
+        stimulus: ` <strong>TASK 3 of `+numTasks+`</strong>  
+          <p>In this task, you will see each of the colors below, one at a time.
+          <br>On each trial, two color category names will appear at the top of the screen: BLUE and PURPLE, with a colored square centered below.
+          
+          <br>Your task is to select which color name you think best describes the color of the square.
+          <p>If you think the color name on the left better describes the color, press the left arrow key.
+          <br>If you think the color name on the right better describes the color, press the right arrow key.
+          <p></p> 
+          
+          <p>Before you begin, please look at all the colors below:
+          <br>please identify a color that you would say is BLUE
+          <br>please identify a color that you would say is PURPLE
+          <p>Please keep these responses in mind when you complete each trial.
+            ${colorRowsHTML2}
+           </div>`,
+          prompt: `<p>Do you have any questions?
+          <br>I will now leave the room and close the door. The door does not lock. Please open it when you have finished this task. 
+          <br>When you are ready, press the spacebar to begin.</p>`,
+        post_trial_gap: 500,
+        choices: [" "],
+        data: {
+        task: "category sorting instructions"
+        
+      }
+    };
+
+    timeline.push(cat_instructions);
+
+
+
+// Preparation: set up conditions and counters
+const colorNums = [...Array(25).keys()]; // 0–24
+const blueSide =["left","right"]
+let category_stimuli = [];
+
+for (let side of blueSide) {
+  for (let num of colorNums) {
+
+    let leftSide =
+    side ===  "left"? "BLUE" : "PURPLE";
+
+    let rightSide = 
+    side ===  "left"? "PURPLE" : "BLUE";
+
+  category_stimuli.push({
+      stimulus: `<div style="position:relative; top: -100px; font-size: 30px;">
+         <div style="width:100px;height:100px; position: relative; left: 275px; top: 275px; background-color:rgb(`+promptedColorR1[num]+`,`+promptedColorG1[num]+`,`+promptedColorB1[num]+`);"></div>`,
+      colorNum: num,
+      leftSide: leftSide, 
+      rightSide: rightSide,
+      prompt: `<div style="position: relative; top: -250px; left: 0; text-align: center;">
+            <p style="font-size: 25px;">Which color name best describes the colored square?<p>Press the left or right arrow key</p>
+            <div style="display: flex; gap: 450px; margin-top: 60px;">
+            <p style="font-size: 30px;">`+leftSide+`</p>
+            <p style="font-size: 30px;">`+rightSide+`</p></div>`
+      });
+  }
+}
+
+
+    //Fixation trial
+    var fixation2 = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: `<div style="position: relative; top: -230px; left: 0; text-align: center;">
+            <p style="font-size: 25px;">Which color name best describes the colored square?<p>Press the left or right arrow key</p>
+            <div style="display: flex; gap: 450px; margin-top: 60px;">
+              <div style="font-size:60px;position: relative; top: 200px; left: 300px">+</div>`,
+        choices: "NO_KEYS",
+        trial_duration: 500, 
+        data: {
+            task: 'fixation2'
+        }
+    };
+
+
+
+  var category_trial = {
+    type: jsPsychHtmlKeyboardResponse,       
+        stimulus: jsPsych.timelineVariable('stimulus'),
+        prompt: jsPsych.timelineVariable('prompt'),
+        response_ends_trial: true, //or until the right arrow is pressed
+        choices: ["arrowLeft","arrowRight"],  //right arrow key
+        data: {
+          task: "category trial",
+          colorNumber: jsPsych.timelineVariable('colorNum'),
+      }}
+
+
+     //Block Break category
+    var block_break_category1 = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: `<div style="font-size: 20px;"><p><strong>Great job!</strong><p>You have completed 25% of the trials in this task.
+                  <p> Please press the spacebar when you are ready to continue. </p>`,
+        post_trial_gap: 500, 
+        response_ends_trial: true,
+        choices: " ",
+          data: {
+            task: 'block break1'
+        }
+    };
+
+        var block_break_category2 = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: `<div style="font-size: 20px;"><p><strong>Great job!</strong><p>You have completed 50% of the trials in this task.
+                  <p> Please press the spacebar when you are ready to continue. </p>`,
+        post_trial_gap: 500, 
+        response_ends_trial: true,
+        choices: " ",
+          data: {
+            task: 'block break2'
+        }
+    };
+
+          var block_break_category3 = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: `<div style="font-size: 20px;"><p><strong>Great job!</strong><p>You have completed 75% of the trials in this task.
+                  <p> Please press the spacebar when you are ready to continue. </p>`,
+        post_trial_gap: 500, 
+        response_ends_trial: true,
+        choices: " ",
+          data: {
+            task: 'block break3'
+        }
+    };
+
+
+      
+  //Block for category trials
+  var category_block = {
+    timeline: [fixation2, category_trial],
+    timeline_variables: category_stimuli,
+    randomize_order: true,
+    repetitions: 2
+  };
+
+ //Block for alien trials
+  var category_block_rep = {
+    timeline: [category_block, block_break_category1, category_block, block_break_category2, category_block, block_break_category3,category_block] // accuracy_block1, alien_block, accuracy_block2],// flower_block, flower_block],
+  };
+  timeline.push(category_block_rep)
+
+
+
+
+
+    var passwordSurvey = {
+      type: jsPsychSurveyHtmlForm,
+      preamble: `<p><strong>Great job!</strong></p> You have completed part 3 of 3.
+                <p>Please let the experimenter know you have finished by opening the door or knocking on it. <br></br>
+                <br>Experimenter, please enter code to continue.`,
+      html: '<input name="secret_code" id="secret_code" type="password" autocomplete="off"required />',
+      autofocus: 'secret_code',
+      button_label: 'Continue',
+      required: true
+    };
+
+    timeline.push(passwordSurvey); 
+
+    
+/* ---------------------------------- End of main experiment ---------------------------------------- */
+
+/* ------------------------------------ Color vision check --------------------------------------- */
+
+
+if (expType == 0){ //in-person (use booth A/B calibrations)//
+
+// ishihara
+var ishiharaReal= {
+type: jsPsychSurveyMultiChoice,
+questions: [
+    {prompt: "Experimenter: please complete ishihara plates. Then return to this screen.", name: 'colorvision', rows: "1", columns: "3", required: true,
+        options: ["Typ", "Atyp", "NA"],
+        horizontal: false,
+        required: true,
+        name: 'ishihara'},
+    ],
+    
+}
+timeline.push(ishiharaReal);
+
+
+} else if (expType >0){ //online (use srgb colors)
+
+// //Function for ishihara plates (online only)
+ ishiharaPlates()
+
+}
+
+
+
+
+/* --------------------------------------- End Color vision check ------------------------ */
+  
+
+// Save data
+   if (expServer == 1){
+      const save_data = {
+        type: jsPsychPipe,
+        action: "save",
+        experiment_id: "mToCVOIjzxjr",
+        filename: filename,
+        data_string: ()=>jsPsych.data.get().csv()
+      };
+    timeline.push(save_data)
+  }
+
+  
+           
+        
+// Exit fullscreen
+    var exit_fullscreen = {
+      type: jsPsychFullscreen,
+      fullscreen_mode: false
+  }
+  timeline.push(exit_fullscreen)
+   
+
+        //Debrief block
+    var debrief_block = {
+        type: jsPsychHtmlKeyboardResponse,
+       stimulus: 
+            ` <div style="max-width: 80%; margin: 0 auto; padding: 20px;">
+              <p><strong>Thank you.<br>You may now close this window.</strong></p>`,
+        choices: function(){
+          if(expServer == 0){
+            return [" "];
+          }else if (expServer == 1){
+            return ["NO_KEYS"];
+          }else{
+            return ["ArrowLeft"];
+          }
+        }
+      }
+    timeline.push(debrief_block);
+
+
+ 
+    // Run timeline
+    jsPsych.run(timeline)
+
+
+  </script>
+</html>
