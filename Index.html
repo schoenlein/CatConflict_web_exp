@@ -33,7 +33,7 @@
     //CATEGORY EXTRAPOLATION CONFLICT EXPERIMENT IN-PERSON
 
     //General experiment info to update
-    console.log("Updated last: 2/7")
+    console.log("Updated last: 2/7-v2")
 
     var expServer = 1 // 0 = testing mode; 1 = on server 
         console.log("serverMode", expServer)
@@ -546,7 +546,7 @@ console.log(promptedColorB1[8])
 
   //Block for alien trials
   var alien_block_Rep = {
-    timeline: [alien_block, accuracy_block1],// flower_block, flower_block],
+    timeline: [alien_block, accuracy_block1, alien_block, accuracy_block2],// flower_block, flower_block],
   };
   timeline.push(alien_block_Rep)
 
@@ -570,7 +570,7 @@ console.log(promptedColorB1[8])
 
 /* ---------------------------------- TASK 2: ASSOCIATION RATINGS ---------------------------------------- */
 
-
+/*
 
 //Create array of squares for block instructions screen
     var stimulusColor = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
@@ -883,7 +883,7 @@ var cat_instructions = {
 
 
 // Preparation: set up conditions and counters
-const colorNums = [...Array(25).keys()]; // 0–24
+const colorNums = [...Array(24).keys()]; // 0–24
 const blueSide =["left","right"]
 let category_stimuli = [];
 
@@ -937,6 +937,8 @@ for (let side of blueSide) {
         data: {
           task: "category trial",
           colorNumber: jsPsych.timelineVariable('colorNum'),
+          leftSide: jsPsych.timelineVariable('leftSide'),
+          rightSide: jsPsych.timelineVariable('rightSide')
       }}
 
 
@@ -989,7 +991,7 @@ for (let side of blueSide) {
 
  //Block for alien trials
   var category_block_rep = {
-    timeline: [category_block, block_break_category1, category_block, block_break_category2, category_block, block_break_category3,category_block] // accuracy_block1, alien_block, accuracy_block2],// flower_block, flower_block],
+    timeline: [category_block, block_break_category1 ]//, category_block, block_break_category2, category_block, block_break_category3,category_block] // accuracy_block1, alien_block, accuracy_block2],// flower_block, flower_block],
   };
   timeline.push(category_block_rep)
 
